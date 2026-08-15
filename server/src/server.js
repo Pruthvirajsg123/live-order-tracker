@@ -1,14 +1,36 @@
+require("dotenv").config();
+
 const express = require("express");
+const pool = require("./db");
 
 const app = express();
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
     message: "Live Order Tracker API is running",
   });
+});
+
+app.get("/api/health/db", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT NOW()");
+
+    res.json({
+      status: "ok",
+      database: "connected",
+      time: result.rows[0].now,
+    });
+  } catch (error) {
+    console.error("Database connection failed:", error);
+
+    res.status(500).json({
+      status: "error",
+      database: "disconnected",
+    });
+  }
 });
 
 app.listen(PORT, () => {
