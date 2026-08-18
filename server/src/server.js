@@ -53,9 +53,16 @@ io.use((socket, next) => {
 });
 
 // Handle authenticated Socket.io connections
+
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
+
   console.log("Authenticated user:", socket.user);
+
+  // Join the room based on the user's role
+  socket.join(socket.user.role);
+
+  console.log(`Socket joined room: ${socket.user.role}`);
 
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);

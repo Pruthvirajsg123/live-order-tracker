@@ -17,6 +17,20 @@ const TRANSITION_ROLES = {
   "PACKED->CANCELLED": ["admin"],
 };
 
+const getStatusUpdateRooms = (currentStatus, nextStatus) => {
+  const transitionKey = `${currentStatus}->${nextStatus}`;
+
+  const rooms = {
+    "PLACED->PACKED": ["warehouse", "admin"],
+    "PACKED->OUT_FOR_DELIVERY": ["delivery", "admin"],
+    "OUT_FOR_DELIVERY->DELIVERED": ["delivery", "admin"],
+    "PLACED->CANCELLED": ["admin"],
+    "PACKED->CANCELLED": ["admin"],
+  };
+
+  return rooms[transitionKey] || [];
+};
+
 const isValidTransition = (currentStatus, nextStatus) => {
   return VALID_TRANSITIONS[currentStatus]?.includes(nextStatus) ?? false;
 };
@@ -36,9 +50,9 @@ const createOrder = async (req, res) => {
 
     const result = await pool.query(
       `
-      INSERT INTO orders 
+      INSERT INTO orders
         (customer_name, address, items, total_amount, status)
-      VALUES 
+      VALUES
         ($1, $2, $3, $4, 'PLACED')
       RETURNING *
       `,
@@ -57,9 +71,8 @@ const createOrder = async (req, res) => {
       [order.id, req.user.userId],
     );
 
-    // Notify connected clients after the order
-    // and its initial audit log have been created.
-    getIO().emit("order:created", order);
+    // Notify only warehouse clients about a newly created order.
+    getIO().to("warehouse").emit("order:created", order);
 
     return res.status(201).json({
       status: "ok",
@@ -79,19 +92,19 @@ const getOrders = async (req, res) => {
   try {
     const result = await pool.query(
       `
-      SELECT 
-        o.id, 
-        o.customer_name, 
-        o.address, 
-        o.items, 
-        o.total_amount, 
-        o.status, 
-        o.assigned_agent_id, 
-        o.created_at, 
-        o.updated_at, 
+      SELECT
+        o.id,
+        o.customer_name,
+        o.address,
+        o.items,
+        o.total_amount,
+        o.status,
+        o.assigned_agent_id,
+        o.created_at,
+        o.updated_at,
         u.name AS assigned_agent
       FROM orders o
-      LEFT JOIN users u 
+      LEFT JOIN users u
         ON o.assigned_agent_id = u.id
       ORDER BY o.created_at DESC
       `,
@@ -117,19 +130,19 @@ const getOrderById = async (req, res) => {
 
     const result = await pool.query(
       `
-      SELECT 
-        o.id, 
-        o.customer_name, 
-        o.address, 
-        o.items, 
-        o.total_amount, 
-        o.status, 
-        o.assigned_agent_id, 
-        o.created_at, 
-        o.updated_at, 
+      SELECT
+        o.id,
+        o.customer_name,
+        o.address,
+        o.items,
+        o.total_amount,
+        o.status,
+        o.assigned_agent_id,
+        o.created_at,
+        o.updated_at,
         u.name AS assigned_agent
       FROM orders o
-      LEFT JOIN users u 
+      LEFT JOIN users u
         ON o.assigned_agent_id = u.id
       WHERE o.id = $1
       `,
@@ -246,13 +259,20 @@ const updateOrderStatus = async (req, res) => {
     // Both database operations succeeded.
     await client.query("COMMIT");
 
-    // Only notify clients AFTER the transaction commits successfully.
-    getIO().emit("order:status_updated", {
+    const statusUpdate = {
       orderId: id,
       fromStatus: currentStatus,
       toStatus: nextStatus,
       changedBy: req.user.userId,
       timestamp: new Date().toISOString(),
+    };
+
+    const rooms = getStatusUpdateRooms(currentStatus, nextStatus);
+
+    const io = getIO();
+
+    rooms.forEach((room) => {
+      io.to(room).emit("order:status_updated", statusUpdate);
     });
 
     console.log(
