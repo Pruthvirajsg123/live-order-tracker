@@ -1,6 +1,9 @@
 node_modules/
 .env
 .env.*
+.env.local
+.env.*local
+
 !.env.example
 dist/
 build/
