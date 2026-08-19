@@ -72,6 +72,9 @@ const createOrder = async (req, res) => {
     );
 
     // Notify only warehouse clients about a newly created order.
+    // Notify only warehouse clients about a newly created order.
+    console.log("Emitting order:created to warehouse:", order.id);
+
     getIO().to("warehouse").emit("order:created", order);
 
     return res.status(201).json({
@@ -272,6 +275,8 @@ const updateOrderStatus = async (req, res) => {
     const io = getIO();
 
     rooms.forEach((room) => {
+      console.log(`Emitting order:status_updated to ${room}:`, statusUpdate);
+
       io.to(room).emit("order:status_updated", statusUpdate);
     });
 

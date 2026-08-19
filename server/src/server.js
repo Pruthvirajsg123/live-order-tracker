@@ -5,12 +5,18 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
+const cors = require("cors");
 const pool = require("./db");
 
 const authRoutes = require("./routes/authRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 
 const app = express();
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+  }),
+);
 
 // Create HTTP server using Express
 const server = http.createServer(app);
