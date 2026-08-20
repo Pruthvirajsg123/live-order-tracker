@@ -1,12 +1,19 @@
 import { io } from "socket.io-client";
 import { useEffect, useState } from "react";
+import "./App.css";
+
 const WAREHOUSE_JWT = import.meta.env.VITE_WAREHOUSE_JWT;
 
 function App() {
   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const fetchOrders = async () => {
     try {
+      setLoading(true);
+      setError("");
+
       const response = await fetch("http://localhost:5000/api/orders", {
         headers: {
           Authorization: `Bearer ${WAREHOUSE_JWT}`,
@@ -15,9 +22,16 @@ function App() {
 
       const data = await response.json();
 
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to fetch orders");
+      }
+
       setOrders(data.orders);
     } catch (error) {
       console.error("Failed to fetch orders:", error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -46,10 +60,11 @@ function App() {
 
       console.log("Order marked as packed:", data.order);
 
-      // Update the order immediately in the UI
       setOrders((currentOrders) =>
         currentOrders.map((order) =>
-          order.id === orderId ? { ...order, status: "PACKED" } : order,
+          String(order.id) === String(orderId)
+            ? { ...order, status: "PACKED" }
+            : order,
         ),
       );
     } catch (error) {
@@ -103,28 +118,89 @@ function App() {
   }, []);
 
   return (
-    <div>
-      <h1>Warehouse Dashboard</h1>
+    <div className="dashboard">
+      <header className="dashboard-header">
+        <div>
+          <h1>Warehouse Dashboard</h1>
+          <p>Manage and process incoming orders</p>
+        </div>
 
-      <h2>Orders</h2>
+        <div className="order-count">
+          <span>{orders.length}</span>
+          <small>Total Orders</small>
+        </div>
+      </header>
 
-      {orders.length === 0 ? (
-        <p>No orders available</p>
-      ) : (
-        orders.map((order) => (
-          <div key={order.id}>
-            <h3>Order #{order.id}</h3>
-            <p>Customer: {order.customer_name}</p>
-            <p>Status: {order.status}</p>
+      <main>
+        <div className="section-header">
+          <h2>Orders</h2>
+        </div>
 
-            {order.status === "PLACED" && (
-              <button onClick={() => markAsPacked(order.id)}>
-                Mark as Packed
-              </button>
-            )}
+        {loading ? (
+          <div className="state-message">
+            <p>Loading orders...</p>
           </div>
-        ))
-      )}
+        ) : error ? (
+          <div className="state-message error">
+            <h3>Failed to load orders</h3>
+            <p>{error}</p>
+
+            <button onClick={fetchOrders}>Try Again</button>
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="state-message">
+            <h3>No orders available</h3>
+            <p>New orders will appear here automatically.</p>
+          </div>
+        ) : (
+          <div className="orders-grid">
+            {orders.map((order) => (
+              <div className="order-card" key={order.id}>
+                <div className="order-card-header">
+                  <h3>Order #{order.id}</h3>
+
+                  <span
+                    className={`status-badge status-${order.status.toLowerCase()}`}
+                  >
+                    {order.status}
+                  </span>
+                </div>
+
+                <div className="order-details">
+                  <div className="detail">
+                    <span className="label">Customer</span>
+                    <span>{order.customer_name}</span>
+                  </div>
+
+                  <div className="detail">
+                    <span className="label">Address</span>
+                    <span>{order.address}</span>
+                  </div>
+
+                  <div className="detail">
+                    <span className="label">Total Amount</span>
+                    <span>₹{order.total_amount}</span>
+                  </div>
+
+                  <div className="detail">
+                    <span className="label">Created</span>
+                    <span>{new Date(order.created_at).toLocaleString()}</span>
+                  </div>
+                </div>
+
+                {order.status === "PLACED" && (
+                  <button
+                    className="pack-button"
+                    onClick={() => markAsPacked(order.id)}
+                  >
+                    Mark as Packed
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
     </div>
   );
 }
