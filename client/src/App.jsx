@@ -2,7 +2,7 @@ import { io } from "socket.io-client";
 import { useEffect, useState } from "react";
 import "./App.css";
 
-const WAREHOUSE_JWT = import.meta.env.VITE_WAREHOUSE_JWT;
+const DELIVERY_JWT = import.meta.env.VITE_DELIVERY_JWT;
 
 function App() {
   const [orders, setOrders] = useState([]);
@@ -16,7 +16,7 @@ function App() {
 
       const response = await fetch("http://localhost:5000/api/orders", {
         headers: {
-          Authorization: `Bearer ${WAREHOUSE_JWT}`,
+          Authorization: `Bearer ${DELIVERY_JWT}`,
         },
       });
 
@@ -35,7 +35,7 @@ function App() {
     }
   };
 
-  const markAsPacked = async (orderId) => {
+  const updateOrderStatus = async (orderId, nextStatus) => {
     try {
       const response = await fetch(
         `http://localhost:5000/api/orders/${orderId}/status`,
@@ -43,10 +43,10 @@ function App() {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${WAREHOUSE_JWT}`,
+            Authorization: `Bearer ${DELIVERY_JWT}`,
           },
           body: JSON.stringify({
-            status: "PACKED",
+            status: nextStatus,
           }),
         },
       );
@@ -54,39 +54,36 @@ function App() {
       const data = await response.json();
 
       if (!response.ok) {
-        console.error("Failed to mark order as packed:", data);
+        console.error("Failed to update order status:", data);
         return;
       }
 
-      console.log("Order marked as packed:", data.order);
+      console.log("Order status updated:", data.order);
 
       setOrders((currentOrders) =>
         currentOrders.map((order) =>
           String(order.id) === String(orderId)
-            ? { ...order, status: "PACKED" }
+            ? {
+                ...order,
+                status: nextStatus,
+              }
             : order,
         ),
       );
     } catch (error) {
-      console.error("Failed to mark order as packed:", error);
+      console.error("Failed to update order status:", error);
     }
   };
 
   useEffect(() => {
     const socket = io("http://localhost:5000", {
       auth: {
-        token: WAREHOUSE_JWT,
+        token: DELIVERY_JWT,
       },
     });
 
     socket.on("connect", () => {
-      console.log("Warehouse socket connected:", socket.id);
-    });
-
-    socket.on("order:created", (newOrder) => {
-      console.log("New order received:", newOrder);
-
-      setOrders((currentOrders) => [newOrder, ...currentOrders]);
+      console.log("Delivery socket connected:", socket.id);
     });
 
     socket.on("order:status_updated", (statusUpdate) => {
@@ -121,8 +118,8 @@ function App() {
     <div className="dashboard">
       <header className="dashboard-header">
         <div>
-          <h1>Warehouse Dashboard</h1>
-          <p>Manage and process incoming orders</p>
+          <h1>Delivery Dashboard</h1>
+          <p>Manage and complete deliveries</p>
         </div>
 
         <div className="order-count">
@@ -150,7 +147,7 @@ function App() {
         ) : orders.length === 0 ? (
           <div className="state-message">
             <h3>No orders available</h3>
-            <p>New orders will appear here automatically.</p>
+            <p>Orders will appear here when they are ready.</p>
           </div>
         ) : (
           <div className="orders-grid">
@@ -188,12 +185,23 @@ function App() {
                   </div>
                 </div>
 
-                {order.status === "PLACED" && (
+                {order.status === "PACKED" && (
                   <button
-                    className="pack-button"
-                    onClick={() => markAsPacked(order.id)}
+                    className="delivery-button"
+                    onClick={() =>
+                      updateOrderStatus(order.id, "OUT_FOR_DELIVERY")
+                    }
                   >
-                    Mark as Packed
+                    Start Delivery
+                  </button>
+                )}
+
+                {order.status === "OUT_FOR_DELIVERY" && (
+                  <button
+                    className="delivery-button"
+                    onClick={() => updateOrderStatus(order.id, "DELIVERED")}
+                  >
+                    Mark Delivered
                   </button>
                 )}
               </div>
