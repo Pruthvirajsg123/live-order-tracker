@@ -93,8 +93,7 @@ const createOrder = async (req, res) => {
 
 const getOrders = async (req, res) => {
   try {
-    const result = await pool.query(
-      `
+    let query = `
       SELECT
         o.id,
         o.customer_name,
@@ -109,9 +108,24 @@ const getOrders = async (req, res) => {
       FROM orders o
       LEFT JOIN users u
         ON o.assigned_agent_id = u.id
+    `;
+
+    const values = [];
+
+    // Delivery agents only see orders assigned to them.
+    if (req.user.role === "delivery") {
+      query += `
+        WHERE o.assigned_agent_id = $1
+      `;
+
+      values.push(req.user.userId);
+    }
+
+    query += `
       ORDER BY o.created_at DESC
-      `,
-    );
+    `;
+
+    const result = await pool.query(query, values);
 
     return res.json({
       status: "ok",
@@ -192,7 +206,7 @@ const updateOrderStatus = async (req, res) => {
     // Lock the order row while we validate and update it.
     const orderResult = await client.query(
       `
-      SELECT id, status
+      SELECT id, status, assigned_agent_id
       FROM orders
       WHERE id = $1
       FOR UPDATE
@@ -236,16 +250,53 @@ const updateOrderStatus = async (req, res) => {
       });
     }
 
-    // Update the order.
+    // Keep the existing assigned agent unless
+    // this is the first transition to PACKED.
+    let assignedAgentId = order.assigned_agent_id || null;
+
+    // Automatically assign a delivery agent when
+    // the order moves from PLACED to PACKED.
+    if (currentStatus === "PLACED" && nextStatus === "PACKED") {
+      const deliveryAgentResult = await client.query(`
+        SELECT
+          u.id,
+          COUNT(o.id) FILTER (
+            WHERE o.status IN ('PACKED', 'OUT_FOR_DELIVERY')
+          ) AS active_orders
+        FROM users u
+        LEFT JOIN orders o
+          ON o.assigned_agent_id = u.id
+        WHERE u.role = 'delivery'
+        GROUP BY u.id
+        ORDER BY active_orders ASC, u.id ASC
+        LIMIT 1
+      `);
+
+      if (deliveryAgentResult.rows.length === 0) {
+        await client.query("ROLLBACK");
+
+        return res.status(500).json({
+          status: "error",
+          message: "No delivery agent available",
+        });
+      }
+
+      assignedAgentId = deliveryAgentResult.rows[0].id;
+
+      console.log(`Order ${id} assigned to delivery agent ${assignedAgentId}`);
+    }
+
+    // Update the order status and assigned delivery agent.
     const updatedOrderResult = await client.query(
       `
       UPDATE orders
       SET status = $1,
+          assigned_agent_id = $2,
           updated_at = NOW()
-      WHERE id = $2
+      WHERE id = $3
       RETURNING *
       `,
-      [nextStatus, id],
+      [nextStatus, assignedAgentId, id],
     );
 
     // Record the status change in the audit log.
