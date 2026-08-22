@@ -44,6 +44,8 @@ function AdminDashboard() {
 
     socket.on("connect", () => {
       console.log("Admin socket connected:", socket.id);
+
+      fetchOrders();
     });
 
     socket.on("order:created", (newOrder) => {
@@ -74,10 +76,6 @@ function AdminDashboard() {
     return () => {
       socket.disconnect();
     };
-  }, []);
-
-  useEffect(() => {
-    fetchOrders();
   }, []);
 
   return (
