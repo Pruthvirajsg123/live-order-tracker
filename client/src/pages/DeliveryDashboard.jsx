@@ -84,6 +84,8 @@ function DeliveryDashboard() {
 
     socket.on("connect", () => {
       console.log("Delivery socket connected:", socket.id);
+
+      fetchOrders();
     });
 
     socket.on("order:status_updated", (statusUpdate) => {
@@ -108,10 +110,6 @@ function DeliveryDashboard() {
     return () => {
       socket.disconnect();
     };
-  }, []);
-
-  useEffect(() => {
-    fetchOrders();
   }, []);
 
   return (

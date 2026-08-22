@@ -85,6 +85,8 @@ function WarehouseDashboard() {
 
     socket.on("connect", () => {
       console.log("Warehouse socket connected:", socket.id);
+
+      fetchOrders();
     });
 
     socket.on("order:created", (newOrder) => {
@@ -115,10 +117,6 @@ function WarehouseDashboard() {
     return () => {
       socket.disconnect();
     };
-  }, []);
-
-  useEffect(() => {
-    fetchOrders();
   }, []);
 
   return (
