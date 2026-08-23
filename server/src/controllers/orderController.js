@@ -187,6 +187,63 @@ const getOrderById = async (req, res) => {
   }
 };
 
+const getOrderStatusHistory = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // First check that the order exists.
+    const orderResult = await pool.query(
+      `
+      SELECT id
+      FROM orders
+      WHERE id = $1
+      `,
+      [id],
+    );
+
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "Order not found",
+      });
+    }
+
+    // Fetch the complete status history along with
+    // information about the user who made each change.
+    const historyResult = await pool.query(
+      `
+      SELECT
+        osl.id,
+        osl.order_id,
+        osl.from_status,
+        osl.to_status,
+        osl.changed_at,
+        u.id AS changed_by_id,
+        u.name AS changed_by_name,
+        u.role AS changed_by_role
+      FROM order_status_logs osl
+      JOIN users u
+        ON osl.changed_by = u.id
+      WHERE osl.order_id = $1
+      ORDER BY osl.changed_at ASC
+      `,
+      [id],
+    );
+
+    return res.json({
+      status: "ok",
+      history: historyResult.rows,
+    });
+  } catch (error) {
+    console.error("Get order status history error:", error);
+
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to fetch order status history",
+    });
+  }
+};
+
 const updateOrderStatus = async (req, res) => {
   const client = await pool.connect();
 
@@ -359,5 +416,6 @@ module.exports = {
   createOrder,
   getOrders,
   getOrderById,
+  getOrderStatusHistory,
   updateOrderStatus,
 };

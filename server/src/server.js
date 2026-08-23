@@ -1,5 +1,6 @@
 require("dotenv").config();
 const { initializeSocket } = require("./socket/socket");
+const analyticsRoutes = require("./routes/analyticsRoutes");
 
 const express = require("express");
 const http = require("http");
@@ -25,6 +26,7 @@ app.use(express.json());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 const PORT = process.env.PORT || 5000;
 
