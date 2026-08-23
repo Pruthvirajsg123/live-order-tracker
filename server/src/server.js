@@ -1,6 +1,4 @@
 require("dotenv").config();
-const { initializeSocket } = require("./socket/socket");
-const analyticsRoutes = require("./routes/analyticsRoutes");
 
 const express = require("express");
 const http = require("http");
@@ -9,33 +7,40 @@ const jwt = require("jsonwebtoken");
 const cors = require("cors");
 const pool = require("./db");
 
+const { initializeSocket } = require("./socket/socket");
+const { startAnalyticsUpdates } = require("./socket/analyticsUpdater");
+
 const authRoutes = require("./routes/authRoutes");
 const orderRoutes = require("./routes/orderRoutes");
+const analyticsRoutes = require("./routes/analyticsRoutes");
 
 const app = express();
+
 app.use(
   cors({
     origin: "http://localhost:5173",
   }),
 );
 
-// Create HTTP server using Express
-const server = http.createServer(app);
-
 app.use(express.json());
 
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/analytics", analyticsRoutes);
 
+// Create HTTP server using Express
+const server = http.createServer(app);
+
 const PORT = process.env.PORT || 5000;
 
-// Create Socket.io server
+// Create Socket.io server — ONLY ONCE
 const io = new Server(server, {
   cors: {
     origin: "*",
   },
 });
+
 initializeSocket(io);
 
 // Socket.io JWT authentication middleware
@@ -49,7 +54,6 @@ io.use((socket, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Store authenticated user information on socket
     socket.user = decoded;
 
     next();
@@ -61,10 +65,8 @@ io.use((socket, next) => {
 });
 
 // Handle authenticated Socket.io connections
-
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
-
   console.log("Authenticated user:", socket.user);
 
   // Join the room based on the user's role
@@ -77,6 +79,10 @@ io.on("connection", (socket) => {
   });
 });
 
+// Start periodic analytics updates AFTER Socket.io is initialized
+startAnalyticsUpdates();
+
+// Health checks
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",

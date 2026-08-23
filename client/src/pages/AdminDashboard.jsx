@@ -54,6 +54,10 @@ function AdminDashboard() {
       setOrders((currentOrders) => [newOrder, ...currentOrders]);
     });
 
+    socket.on("analytics:update", (analyticsData) => {
+      console.log("Live analytics update received:", analyticsData);
+    });
+
     socket.on("order:status_updated", (statusUpdate) => {
       console.log("Order status updated:", statusUpdate);
 
