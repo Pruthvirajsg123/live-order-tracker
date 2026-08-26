@@ -6,6 +6,7 @@ const ADMIN_JWT = import.meta.env.VITE_ADMIN_JWT;
 
 function AdminDashboard() {
   const [orders, setOrders] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -35,6 +36,29 @@ function AdminDashboard() {
     }
   };
 
+  const fetchAnalytics = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/analytics/summary",
+        {
+          headers: {
+            Authorization: `Bearer ${ADMIN_JWT}`,
+          },
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to fetch analytics");
+      }
+
+      setAnalytics(data.analytics);
+    } catch (error) {
+      console.error("Failed to fetch analytics:", error);
+    }
+  };
+
   useEffect(() => {
     const socket = io("http://localhost:5000", {
       auth: {
@@ -46,6 +70,7 @@ function AdminDashboard() {
       console.log("Admin socket connected:", socket.id);
 
       fetchOrders();
+      fetchAnalytics();
     });
 
     socket.on("order:created", (newOrder) => {
@@ -56,6 +81,8 @@ function AdminDashboard() {
 
     socket.on("analytics:update", (analyticsData) => {
       console.log("Live analytics update received:", analyticsData);
+
+      setAnalytics(analyticsData);
     });
 
     socket.on("order:status_updated", (statusUpdate) => {
@@ -91,12 +118,97 @@ function AdminDashboard() {
         </div>
 
         <div className="order-count">
-          <span>{orders.length}</span>
+          <span>{analytics?.totalOrders ?? orders.length}</span>
           <small>Total Orders</small>
         </div>
       </header>
 
       <main>
+        {/* Live Analytics Section */}
+        {analytics && (
+          <section className="analytics-section">
+            <div className="section-header">
+              <h2>Live Analytics</h2>
+            </div>
+
+            {/* Summary Cards */}
+            <div className="analytics-grid">
+              <div className="analytics-card">
+                <span className="label">Total Orders</span>
+                <h3>{analytics.totalOrders}</h3>
+              </div>
+
+              <div className="analytics-card">
+                <span className="label">Orders per Minute</span>
+                <h3>{analytics.ordersPerMinute}</h3>
+              </div>
+
+              <div className="analytics-card">
+                <span className="label">Cancellation Rate</span>
+                <h3>{analytics.cancellationRate}%</h3>
+              </div>
+
+              <div className="analytics-card">
+                <span className="label">Current Bottleneck</span>
+                <h3>
+                  {analytics.bottleneck?.stage?.replaceAll("_", " ") || "None"}
+                </h3>
+              </div>
+            </div>
+
+            {/* Detailed Analytics */}
+            <div className="analytics-details">
+              {/* Orders by Status */}
+              <div className="analytics-panel">
+                <h3>Orders by Status</h3>
+
+                <div className="status-analytics-list">
+                  {Object.entries(analytics.ordersByStatus).map(
+                    ([status, count]) => (
+                      <div className="analytics-row" key={status}>
+                        <span>{status.replaceAll("_", " ")}</span>
+
+                        <div className="analytics-bar-container">
+                          <div
+                            className="analytics-bar"
+                            style={{
+                              width: `${
+                                analytics.totalOrders === 0
+                                  ? 0
+                                  : (count / analytics.totalOrders) * 100
+                              }%`,
+                            }}
+                          />
+                        </div>
+
+                        <strong>{count}</strong>
+                      </div>
+                    ),
+                  )}
+                </div>
+              </div>
+
+              {/* Average Stage Time */}
+              <div className="analytics-panel">
+                <h3>Average Stage Time</h3>
+
+                <div className="stage-time-list">
+                  {Object.entries(analytics.averageStageTimes).map(
+                    ([stage, seconds]) => (
+                      <div className="analytics-row" key={stage}>
+                        <span>{stage.replaceAll("_", " ")}</span>
+
+                        <strong>{Math.round(seconds)} sec</strong>
+                      </div>
+                    ),
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Orders Section */}
         <div className="section-header">
           <h2>All Orders</h2>
         </div>
