@@ -1,14 +1,23 @@
 import { io } from "socket.io-client";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "../App.css";
 
-const ADMIN_JWT = import.meta.env.VITE_ADMIN_JWT;
+import { useAuth } from "../context/AuthContext";
 
 function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const { token, user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   const fetchOrders = async () => {
     try {
@@ -17,7 +26,7 @@ function AdminDashboard() {
 
       const response = await fetch("http://localhost:5000/api/orders", {
         headers: {
-          Authorization: `Bearer ${ADMIN_JWT}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -42,7 +51,7 @@ function AdminDashboard() {
         "http://localhost:5000/api/analytics/summary",
         {
           headers: {
-            Authorization: `Bearer ${ADMIN_JWT}`,
+            Authorization: `Bearer ${token}`,
           },
         },
       );
@@ -60,9 +69,11 @@ function AdminDashboard() {
   };
 
   useEffect(() => {
+    if (!token) return;
+
     const socket = io("http://localhost:5000", {
       auth: {
-        token: ADMIN_JWT,
+        token,
       },
     });
 
@@ -107,19 +118,28 @@ function AdminDashboard() {
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [token]);
 
   return (
     <div className="dashboard">
       <header className="dashboard-header">
         <div>
           <h1>Admin Dashboard</h1>
-          <p>Monitor order operations in real time</p>
+          <p>
+            Welcome, {user?.name || "Admin"} — Monitor order operations in real
+            time
+          </p>
         </div>
 
-        <div className="order-count">
-          <span>{analytics?.totalOrders ?? orders.length}</span>
-          <small>Total Orders</small>
+        <div className="dashboard-actions">
+          <div className="order-count">
+            <span>{analytics?.totalOrders ?? orders.length}</span>
+            <small>Total Orders</small>
+          </div>
+
+          <button className="logout-button" onClick={handleLogout}>
+            Logout
+          </button>
         </div>
       </header>
 

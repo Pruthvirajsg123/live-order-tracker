@@ -1,10 +1,11 @@
 import { io } from "socket.io-client";
 import { useEffect, useState } from "react";
 import "../App.css";
-
-const WAREHOUSE_JWT = import.meta.env.VITE_WAREHOUSE_JWT;
+import { useAuth } from "../context/AuthContext";
 
 function WarehouseDashboard() {
+  const { token, user, logout } = useAuth();
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -16,7 +17,7 @@ function WarehouseDashboard() {
 
       const response = await fetch("http://localhost:5000/api/orders", {
         headers: {
-          Authorization: `Bearer ${WAREHOUSE_JWT}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -43,7 +44,7 @@ function WarehouseDashboard() {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${WAREHOUSE_JWT}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             status: "PACKED",
@@ -77,15 +78,16 @@ function WarehouseDashboard() {
   };
 
   useEffect(() => {
+    if (!token) return;
+
     const socket = io("http://localhost:5000", {
       auth: {
-        token: WAREHOUSE_JWT,
+        token,
       },
     });
 
     socket.on("connect", () => {
       console.log("Warehouse socket connected:", socket.id);
-
       fetchOrders();
     });
 
@@ -117,19 +119,28 @@ function WarehouseDashboard() {
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [token]);
 
   return (
     <div className="dashboard">
       <header className="dashboard-header">
         <div>
           <h1>Warehouse Dashboard</h1>
-          <p>Manage and process incoming orders</p>
+          <p>
+            Welcome, {user?.name || "Warehouse User"} — Manage and process
+            incoming orders
+          </p>
         </div>
 
-        <div className="order-count">
-          <span>{orders.length}</span>
-          <small>Total Orders</small>
+        <div className="dashboard-actions">
+          <div className="order-count">
+            <span>{orders.length}</span>
+            <small>Total Orders</small>
+          </div>
+
+          <button className="logout-button" onClick={logout}>
+            Logout
+          </button>
         </div>
       </header>
 
@@ -164,7 +175,7 @@ function WarehouseDashboard() {
                   <span
                     className={`status-badge status-${order.status.toLowerCase()}`}
                   >
-                    {order.status}
+                    {order.status.replaceAll("_", " ")}
                   </span>
                 </div>
 

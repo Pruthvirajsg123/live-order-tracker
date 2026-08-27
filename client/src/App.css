@@ -8,7 +8,139 @@
 
 body {
   margin: 0;
+  background: #0f1117;
+  color: white;
+  font-family: Arial, sans-serif;
 }
+
+/* =========================
+   AUTH PAGES
+========================= */
+
+.auth-page {
+  min-height: 100vh;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #0f1117;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 32px;
+  background: #181b23;
+  border: 1px solid #272b35;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+
+.auth-card h1 {
+  margin: 0 0 10px;
+  font-size: 30px;
+}
+
+.auth-subtitle {
+  margin: 0 0 28px;
+  color: #a0a6b1;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.auth-field label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #d1d5db;
+}
+
+.auth-field input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #3a404d;
+  border-radius: 8px;
+  background: #11141b;
+  color: white;
+  font-size: 14px;
+  outline: none;
+}
+
+.auth-field input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.auth-field input::placeholder {
+  color: #6b7280;
+}
+
+.auth-button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: white;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.auth-button:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.auth-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-error,
+.auth-success {
+  margin: 0 0 18px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.auth-error {
+  background: #4a1d24;
+  color: #ff9ba5;
+  border: 1px solid #6b2933;
+}
+
+.auth-success {
+  background: #123d25;
+  color: #86efac;
+  border: 1px solid #256b42;
+}
+
+.auth-footer {
+  margin-top: 24px;
+  text-align: center;
+  color: #a0a6b1;
+  font-size: 14px;
+}
+
+.auth-footer a {
+  color: #60a5fa;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.auth-footer a:hover {
+  text-decoration: underline;
+}
+
+/* =========================
+   DASHBOARD
+========================= */
 
 .dashboard {
   min-height: 100vh;
@@ -24,7 +156,6 @@ body {
 .dashboard-header {
   max-width: 1200px;
   margin: 0 auto 32px;
-
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -44,15 +175,11 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-
   padding: 16px 24px;
-
   background: #181b23;
   color: white;
-
   border: 1px solid #272b35;
   border-radius: 10px;
-
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
@@ -102,18 +229,14 @@ main {
 .analytics-panel {
   background: #181b23;
   color: white;
-
   border: 1px solid #272b35;
   border-radius: 12px;
-
   padding: 20px;
-
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
 }
 
 .analytics-card {
   min-height: 120px;
-
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -122,12 +245,9 @@ main {
 .analytics-card h3 {
   margin: 10px 0 0;
   font-size: 28px;
-  color: white;
 }
 
 .analytics-details {
-  grid-column: span 4;
-
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
@@ -136,7 +256,6 @@ main {
 .analytics-panel h3 {
   margin: 0 0 20px;
   font-size: 18px;
-  color: white;
 }
 
 .status-analytics-list,
@@ -167,20 +286,15 @@ main {
 .analytics-bar-container {
   flex: 1;
   height: 10px;
-
   background: #272b35;
-
   border-radius: 999px;
   overflow: hidden;
 }
 
 .analytics-bar {
   height: 100%;
-
   background: #2563eb;
-
   border-radius: 999px;
-
   transition: width 0.3s ease;
 }
 
@@ -197,14 +311,10 @@ main {
 .order-card {
   background: #181b23;
   color: white;
-
   border: 1px solid #272b35;
   border-radius: 12px;
-
   padding: 20px;
-
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
-
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
@@ -219,7 +329,6 @@ main {
   display: flex;
   justify-content: space-between;
   align-items: center;
-
   margin-bottom: 20px;
 }
 
@@ -234,9 +343,7 @@ main {
 
 .status-badge {
   padding: 6px 10px;
-
   border-radius: 20px;
-
   font-size: 11px;
   font-weight: bold;
 }
@@ -284,9 +391,7 @@ main {
 
 .label {
   font-size: 11px;
-
   color: #8f96a3;
-
   text-transform: uppercase;
   font-weight: bold;
   letter-spacing: 0.5px;
@@ -301,18 +406,13 @@ main {
   width: 100%;
   margin-top: 20px;
   padding: 11px;
-
   border: none;
   border-radius: 8px;
-
   background: #2563eb;
   color: white;
-
   font-size: 14px;
   font-weight: bold;
-
   cursor: pointer;
-
   transition: background 0.2s ease;
 }
 
@@ -329,12 +429,9 @@ main {
   max-width: 600px;
   margin: 60px auto;
   padding: 40px;
-
   text-align: center;
-
   background: #181b23;
   color: white;
-
   border: 1px solid #272b35;
   border-radius: 12px;
 }
@@ -354,15 +451,11 @@ main {
 .state-message button {
   margin-top: 15px;
   padding: 10px 20px;
-
   border: none;
   border-radius: 8px;
-
   background: #2563eb;
   color: white;
-
   cursor: pointer;
-
   transition: background 0.2s ease;
 }
 
@@ -380,7 +473,6 @@ main {
   }
 
   .analytics-details {
-    grid-column: span 2;
     grid-template-columns: 1fr;
   }
 }
@@ -396,20 +488,17 @@ main {
     gap: 20px;
   }
 
-  .orders-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .analytics-grid {
-    grid-template-columns: 1fr;
-  }
-
+  .orders-grid,
+  .analytics-grid,
   .analytics-details {
-    grid-column: span 1;
     grid-template-columns: 1fr;
   }
 
   .analytics-row > span {
     width: 110px;
+  }
+
+  .auth-card {
+    padding: 24px;
   }
 }
