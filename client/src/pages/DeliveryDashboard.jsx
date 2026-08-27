@@ -1,10 +1,11 @@
 import { io } from "socket.io-client";
 import { useEffect, useState } from "react";
 import "../App.css";
-
-const DELIVERY_JWT = import.meta.env.VITE_DELIVERY_JWT;
+import { useAuth } from "../context/AuthContext";
 
 function DeliveryDashboard() {
+  const { token, user, logout } = useAuth();
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -16,7 +17,7 @@ function DeliveryDashboard() {
 
       const response = await fetch("http://localhost:5000/api/orders", {
         headers: {
-          Authorization: `Bearer ${DELIVERY_JWT}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -43,7 +44,7 @@ function DeliveryDashboard() {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${DELIVERY_JWT}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             status: nextStatus,
@@ -76,15 +77,16 @@ function DeliveryDashboard() {
   };
 
   useEffect(() => {
+    if (!token) return;
+
     const socket = io("http://localhost:5000", {
       auth: {
-        token: DELIVERY_JWT,
+        token,
       },
     });
 
     socket.on("connect", () => {
       console.log("Delivery socket connected:", socket.id);
-
       fetchOrders();
     });
 
@@ -110,19 +112,28 @@ function DeliveryDashboard() {
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [token]);
 
   return (
     <div className="dashboard">
       <header className="dashboard-header">
         <div>
           <h1>Delivery Dashboard</h1>
-          <p>Manage and complete deliveries</p>
+          <p>
+            Welcome, {user?.name || "Delivery User"} — Manage and complete
+            deliveries
+          </p>
         </div>
 
-        <div className="order-count">
-          <span>{orders.length}</span>
-          <small>Assigned Orders</small>
+        <div className="dashboard-actions">
+          <div className="order-count">
+            <span>{orders.length}</span>
+            <small>Assigned Orders</small>
+          </div>
+
+          <button className="logout-button" onClick={logout}>
+            Logout
+          </button>
         </div>
       </header>
 
@@ -157,7 +168,7 @@ function DeliveryDashboard() {
                   <span
                     className={`status-badge status-${order.status.toLowerCase()}`}
                   >
-                    {order.status}
+                    {order.status.replaceAll("_", " ")}
                   </span>
                 </div>
 
