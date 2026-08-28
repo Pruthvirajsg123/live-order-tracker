@@ -61,6 +61,7 @@ function DeliveryDashboard() {
 
       console.log("Order status updated:", data.order);
 
+      // Update immediately for the user who performed the action.
       setOrders((currentOrders) =>
         currentOrders.map((order) =>
           String(order.id) === String(orderId)
@@ -87,9 +88,32 @@ function DeliveryDashboard() {
 
     socket.on("connect", () => {
       console.log("Delivery socket connected:", socket.id);
+
+      // Fetch the current assigned orders when connecting/reconnecting.
       fetchOrders();
     });
 
+    // NEW: Receive an order when it is assigned specifically
+    // to this delivery agent.
+    socket.on("order:assigned", (assignedOrder) => {
+      console.log("New order assigned:", assignedOrder);
+
+      setOrders((currentOrders) => {
+        const alreadyExists = currentOrders.some(
+          (order) => String(order.id) === String(assignedOrder.id),
+        );
+
+        // Prevent duplicates if the order is already in the dashboard.
+        if (alreadyExists) {
+          return currentOrders;
+        }
+
+        return [assignedOrder, ...currentOrders];
+      });
+    });
+
+    // Receive live status updates for orders already assigned
+    // to this delivery user.
     socket.on("order:status_updated", (statusUpdate) => {
       console.log("Order status updated:", statusUpdate);
 
@@ -156,7 +180,7 @@ function DeliveryDashboard() {
         ) : orders.length === 0 ? (
           <div className="state-message">
             <h3>No assigned orders</h3>
-            <p>Orders assigned to you will appear here.</p>
+            <p>Orders assigned to you will appear here automatically.</p>
           </div>
         ) : (
           <div className="orders-grid">

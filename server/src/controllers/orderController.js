@@ -75,7 +75,10 @@ const createOrder = async (req, res) => {
     // Notify only warehouse clients about a newly created order.
     console.log("Emitting order:created to warehouse:", order.id);
 
-    getIO().to("warehouse").emit("order:created", order);
+    const io = getIO();
+
+    io.to("warehouse").emit("order:created", order);
+    io.to("admin").emit("order:created", order);
 
     return res.status(201).json({
       status: "ok",
@@ -387,6 +390,20 @@ const updateOrderStatus = async (req, res) => {
 
       io.to(room).emit("order:status_updated", statusUpdate);
     });
+
+    // When an order is packed, it has just been assigned to a delivery agent.
+    // Send the complete order directly to that agent so it appears instantly
+    // in their dashboard without requiring a refresh.
+    if (currentStatus === "PLACED" && nextStatus === "PACKED") {
+      const assignedOrder = updatedOrderResult.rows[0];
+
+      console.log(
+        `Emitting order:assigned to user:${assignedAgentId}:`,
+        assignedOrder.id,
+      );
+
+      io.to(`user:${assignedAgentId}`).emit("order:assigned", assignedOrder);
+    }
 
     console.log(
       `Order ${id}: ${currentStatus} -> ${nextStatus} by user ${req.user.userId}`,

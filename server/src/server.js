@@ -37,7 +37,7 @@ const PORT = process.env.PORT || 5000;
 // Create Socket.io server — ONLY ONCE
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: "http://localhost:5173",
   },
 });
 
@@ -72,7 +72,11 @@ io.on("connection", (socket) => {
   // Join the room based on the user's role
   socket.join(socket.user.role);
 
+  // Join a personal room for this specific user
+  socket.join(`user:${socket.user.userId}`);
+
   console.log(`Socket joined room: ${socket.user.role}`);
+  console.log(`Socket joined personal room: user:${socket.user.userId}`);
 
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
