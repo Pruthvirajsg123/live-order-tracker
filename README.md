@@ -36,6 +36,7 @@ PLACED → PACKED → OUT_FOR_DELIVERY → DELIVERED
 Orders can also be cancelled when required.
 
 ⚡ Real-Time Updates
+
 Real-time order updates using Socket.io
 Role-based Socket.io rooms
 Personal user rooms for targeted updates
@@ -53,6 +54,7 @@ Orders per minute
 Cancellation rate
 Average stage time
 Current operational bottleneck
+
 🧪 Load Testing / Order Simulation
 
 A separate load-test script can simulate incoming orders against the API.
@@ -63,6 +65,8 @@ Backend API reliability
 Database persistence
 Real-time event propagation
 Dashboard synchronization
+
+
 🏗️ Architecture
                     ┌─────────────────────┐
                     │   React Frontend    │
@@ -88,6 +92,8 @@ Dashboard synchronization
                     ┌──────────▼──────────┐
                     │     Supabase DB     │
                     └─────────────────────┘
+
+
 🛠️ Tech Stack
 Frontend
 React
@@ -106,6 +112,8 @@ Supabase
 Deployment
 Render
 Supabase PostgreSQL
+
+
 📁 Project Structure
 orderpulse/
 │
@@ -126,7 +134,10 @@ orderpulse/
 ├── load-test/           # Order simulation script
 │
 └── README.md
+
+
 🚀 Running the Project Locally
+
 1. Clone the Repository
 git clone https://github.com/Pruthvirajsg123/orderpulse.git
 cd orderpulse
@@ -170,6 +181,7 @@ npm run dev
 The application will usually be available at:
 
 http://localhost:5173
+
 🔐 Environment Variables
 Server
 
@@ -219,6 +231,7 @@ Display success/failure statistics
 
 You can observe the orders appearing in real time across the dashboards.
 
+
 🔄 Real-Time Flow
 Order Created
       │
@@ -239,17 +252,22 @@ Socket.io Event
 
 The application uses Socket.io rooms to ensure that relevant real-time events are delivered to the appropriate users and roles.
 
-📸 Screenshots
- Registr/login
- ![Register / Login](image-4.png)
+## 📸 Screenshots
 
-📦 Warehouse Dashboard
+### 🔐 Register / Login
+
+![Register / Login](image-4.png)
+
+### 📦 Warehouse Dashboard
+
 ![Warehouse Dashboard](image-3.png)
 
-🚚 Delivery Dashboard
+### 🚚 Delivery Dashboard
+
 ![Delivery Dashboard](image-1.png)
 
-📊 Admin Dashboard
+### 📊 Admin Dashboard
+
 ![Admin Dashboard](image-2.png)
 
 🎯 What I Learned
@@ -265,6 +283,7 @@ React Context for authentication state
 Frontend route protection
 Cloud deployment with Render
 Managing production and local environment configuration
+
 🔮 Future Improvements
 Order filtering and search
 Pagination for large order volumes
@@ -272,6 +291,8 @@ Advanced analytics and charts
 Email or push notifications
 Improved load testing with concurrent users
 Automated testing and CI/CD
+
+
 👨‍💻 Author
 
 Pruthviraj
