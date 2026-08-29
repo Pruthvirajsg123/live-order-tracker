@@ -23,6 +23,17 @@ function ProtectedRoute({ children, allowedRole }) {
   return children;
 }
 
+// Prevent authenticated users from accessing login/register pages.
+function PublicRoute({ children }) {
+  const { user, isAuthenticated } = useAuth();
+
+  if (isAuthenticated && user) {
+    return <Navigate to={`/${user.role}`} replace />;
+  }
+
+  return children;
+}
+
 function RoleRedirect() {
   const { user, isAuthenticated } = useAuth();
 
@@ -37,8 +48,23 @@ function App() {
   return (
     <Routes>
       {/* Authentication pages */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <LoginPage />
+          </PublicRoute>
+        }
+      />
+
+      <Route
+        path="/register"
+        element={
+          <PublicRoute>
+            <RegisterPage />
+          </PublicRoute>
+        }
+      />
 
       {/* Warehouse dashboard */}
       <Route
