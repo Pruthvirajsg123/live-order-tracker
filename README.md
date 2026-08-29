@@ -252,24 +252,6 @@ Socket.io Event
 
 The application uses Socket.io rooms to ensure that relevant real-time events are delivered to the appropriate users and roles.
 
-## 📸 Screenshots
-
-### 🔐 Register / Login
-
-![Register / Login](image-4.png)
-
-### 📦 Warehouse Dashboard
-
-![Warehouse Dashboard](image-3.png)
-
-### 🚚 Delivery Dashboard
-
-![Delivery Dashboard](image-1.png)
-
-### 📊 Admin Dashboard
-
-![Admin Dashboard](image-2.png)
-
 🎯 What I Learned
 
 While building OrderPulse, I gained hands-on experience with:
