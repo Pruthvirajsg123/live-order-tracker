@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import "../App.css";
 import { useAuth } from "../context/AuthContext";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function WarehouseDashboard() {
   const { token, user, logout } = useAuth();
 
@@ -15,7 +17,7 @@ function WarehouseDashboard() {
       setLoading(true);
       setError("");
 
-      const response = await fetch("http://localhost:5000/api/orders", {
+      const response = await fetch(`${API_URL}/api/orders`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -38,19 +40,16 @@ function WarehouseDashboard() {
 
   const markAsPacked = async (orderId) => {
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/orders/${orderId}/status`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            status: "PACKED",
-          }),
+      const response = await fetch(`${API_URL}/api/orders/${orderId}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          status: "PACKED",
+        }),
+      });
 
       const data = await response.json();
 
@@ -80,7 +79,7 @@ function WarehouseDashboard() {
   useEffect(() => {
     if (!token) return;
 
-    const socket = io("http://localhost:5000", {
+    const socket = io(API_URL, {
       auth: {
         token,
       },
@@ -94,7 +93,17 @@ function WarehouseDashboard() {
     socket.on("order:created", (newOrder) => {
       console.log("New order received:", newOrder);
 
-      setOrders((currentOrders) => [newOrder, ...currentOrders]);
+      setOrders((currentOrders) => {
+        const alreadyExists = currentOrders.some(
+          (order) => String(order.id) === String(newOrder.id),
+        );
+
+        if (alreadyExists) {
+          return currentOrders;
+        }
+
+        return [newOrder, ...currentOrders];
+      });
     });
 
     socket.on("order:status_updated", (statusUpdate) => {
