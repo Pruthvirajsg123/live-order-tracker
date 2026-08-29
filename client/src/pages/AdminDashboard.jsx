@@ -19,6 +19,7 @@ function AdminDashboard() {
     navigate("/login");
   };
 
+  // Fetch all orders from the REST API
   const fetchOrders = async () => {
     try {
       setLoading(true);
@@ -36,6 +37,8 @@ function AdminDashboard() {
         throw new Error(data.message || "Failed to fetch orders");
       }
 
+      console.log("Admin orders fetched:", data.orders);
+
       setOrders(data.orders);
     } catch (error) {
       console.error("Failed to fetch orders:", error);
@@ -45,6 +48,7 @@ function AdminDashboard() {
     }
   };
 
+  // Fetch analytics from the REST API
   const fetchAnalytics = async () => {
     try {
       const response = await fetch(
@@ -62,6 +66,8 @@ function AdminDashboard() {
         throw new Error(data.message || "Failed to fetch analytics");
       }
 
+      console.log("Admin analytics fetched:", data.analytics);
+
       setAnalytics(data.analytics);
     } catch (error) {
       console.error("Failed to fetch analytics:", error);
@@ -71,6 +77,17 @@ function AdminDashboard() {
   useEffect(() => {
     if (!token) return;
 
+    // ==============================
+    // 1. FETCH INITIAL DATA IMMEDIATELY
+    // ==============================
+    // The dashboard should not depend on Socket.io
+    // to load its initial data.
+    fetchOrders();
+    fetchAnalytics();
+
+    // ==============================
+    // 2. CONNECT TO SOCKET.IO
+    // ==============================
     const socket = io("http://localhost:5000", {
       auth: {
         token,
@@ -79,23 +96,40 @@ function AdminDashboard() {
 
     socket.on("connect", () => {
       console.log("Admin socket connected:", socket.id);
-
-      fetchOrders();
-      fetchAnalytics();
     });
 
+    // ==============================
+    // 3. RECEIVE NEW ORDERS LIVE
+    // ==============================
     socket.on("order:created", (newOrder) => {
       console.log("New order received:", newOrder);
 
-      setOrders((currentOrders) => [newOrder, ...currentOrders]);
+      setOrders((currentOrders) => {
+        // Prevent duplicate orders
+        const alreadyExists = currentOrders.some(
+          (order) => String(order.id) === String(newOrder.id),
+        );
+
+        if (alreadyExists) {
+          return currentOrders;
+        }
+
+        return [newOrder, ...currentOrders];
+      });
     });
 
+    // ==============================
+    // 4. RECEIVE LIVE ANALYTICS
+    // ==============================
     socket.on("analytics:update", (analyticsData) => {
       console.log("Live analytics update received:", analyticsData);
 
       setAnalytics(analyticsData);
     });
 
+    // ==============================
+    // 5. RECEIVE LIVE STATUS UPDATES
+    // ==============================
     socket.on("order:status_updated", (statusUpdate) => {
       console.log("Order status updated:", statusUpdate);
 
@@ -111,10 +145,14 @@ function AdminDashboard() {
       );
     });
 
+    // ==============================
+    // 6. SOCKET CONNECTION ERROR
+    // ==============================
     socket.on("connect_error", (error) => {
-      console.error("Socket connection error:", error.message);
+      console.error("Admin socket connection error:", error.message);
     });
 
+    // Cleanup when component unmounts
     return () => {
       socket.disconnect();
     };
@@ -125,6 +163,7 @@ function AdminDashboard() {
       <header className="dashboard-header">
         <div>
           <h1>Admin Dashboard</h1>
+
           <p>
             Welcome, {user?.name || "Admin"} — Monitor order operations in real
             time
@@ -134,6 +173,7 @@ function AdminDashboard() {
         <div className="dashboard-actions">
           <div className="order-count">
             <span>{analytics?.totalOrders ?? orders.length}</span>
+
             <small>Total Orders</small>
           </div>
 
@@ -144,7 +184,9 @@ function AdminDashboard() {
       </header>
 
       <main>
-        {/* Live Analytics Section */}
+        {/* ==============================
+            LIVE ANALYTICS SECTION
+        ============================== */}
         {analytics && (
           <section className="analytics-section">
             <div className="section-header">
@@ -155,21 +197,25 @@ function AdminDashboard() {
             <div className="analytics-grid">
               <div className="analytics-card">
                 <span className="label">Total Orders</span>
+
                 <h3>{analytics.totalOrders}</h3>
               </div>
 
               <div className="analytics-card">
                 <span className="label">Orders per Minute</span>
+
                 <h3>{analytics.ordersPerMinute}</h3>
               </div>
 
               <div className="analytics-card">
                 <span className="label">Cancellation Rate</span>
+
                 <h3>{analytics.cancellationRate}%</h3>
               </div>
 
               <div className="analytics-card">
                 <span className="label">Current Bottleneck</span>
+
                 <h3>
                   {analytics.bottleneck?.stage?.replaceAll("_", " ") || "None"}
                 </h3>
@@ -183,7 +229,7 @@ function AdminDashboard() {
                 <h3>Orders by Status</h3>
 
                 <div className="status-analytics-list">
-                  {Object.entries(analytics.ordersByStatus).map(
+                  {Object.entries(analytics.ordersByStatus || {}).map(
                     ([status, count]) => (
                       <div className="analytics-row" key={status}>
                         <span>{status.replaceAll("_", " ")}</span>
@@ -213,7 +259,7 @@ function AdminDashboard() {
                 <h3>Average Stage Time</h3>
 
                 <div className="stage-time-list">
-                  {Object.entries(analytics.averageStageTimes).map(
+                  {Object.entries(analytics.averageStageTimes || {}).map(
                     ([stage, seconds]) => (
                       <div className="analytics-row" key={stage}>
                         <span>{stage.replaceAll("_", " ")}</span>
@@ -228,7 +274,9 @@ function AdminDashboard() {
           </section>
         )}
 
-        {/* Orders Section */}
+        {/* ==============================
+            ORDERS SECTION
+        ============================== */}
         <div className="section-header">
           <h2>All Orders</h2>
         </div>
@@ -240,6 +288,7 @@ function AdminDashboard() {
         ) : error ? (
           <div className="state-message error">
             <h3>Failed to load orders</h3>
+
             <p>{error}</p>
 
             <button onClick={fetchOrders}>Try Again</button>
@@ -247,6 +296,7 @@ function AdminDashboard() {
         ) : orders.length === 0 ? (
           <div className="state-message">
             <h3>No orders available</h3>
+
             <p>Orders will appear here automatically.</p>
           </div>
         ) : (
@@ -259,33 +309,38 @@ function AdminDashboard() {
                   <span
                     className={`status-badge status-${order.status.toLowerCase()}`}
                   >
-                    {order.status}
+                    {order.status.replaceAll("_", " ")}
                   </span>
                 </div>
 
                 <div className="order-details">
                   <div className="detail">
                     <span className="label">Customer</span>
+
                     <span>{order.customer_name}</span>
                   </div>
 
                   <div className="detail">
                     <span className="label">Address</span>
+
                     <span>{order.address}</span>
                   </div>
 
                   <div className="detail">
                     <span className="label">Total Amount</span>
+
                     <span>₹{order.total_amount}</span>
                   </div>
 
                   <div className="detail">
                     <span className="label">Assigned Agent</span>
+
                     <span>{order.assigned_agent || "Not assigned"}</span>
                   </div>
 
                   <div className="detail">
                     <span className="label">Created</span>
+
                     <span>{new Date(order.created_at).toLocaleString()}</span>
                   </div>
                 </div>
