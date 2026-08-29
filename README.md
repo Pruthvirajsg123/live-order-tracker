@@ -252,6 +252,8 @@ Socket.io Event
 
 The application uses Socket.io rooms to ensure that relevant real-time events are delivered to the appropriate users and roles.
 
+🚀 Load-tested the system with 1,000 simulated orders, achieving a 100% success rate with zero failures and processing approximately 4.1 orders per second.
+
 🎯 What I Learned
 
 While building OrderPulse, I gained hands-on experience with:
@@ -273,6 +275,10 @@ Advanced analytics and charts
 Email or push notifications
 Improved load testing with concurrent users
 Automated testing and CI/CD
+
+
+
+
 
 
 👨‍💻 Author
