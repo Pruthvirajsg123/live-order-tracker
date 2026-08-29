@@ -1,11 +1,13 @@
-const API_URL = "http://localhost:5000/api";
+require("dotenv").config();
+
+const API_URL = process.env.API_URL || "http://localhost:5000";
 
 // --------------------------------------------------
 // CONFIGURATION
 // --------------------------------------------------
 
-const EMAIL = "warehouse@example.com";
-const PASSWORD = "warehouse@123";
+const EMAIL = process.env.TEST_EMAIL;
+const PASSWORD = process.env.TEST_PASSWORD;
 
 const TOTAL_ORDERS = 10;
 const DELAY_BETWEEN_ORDERS = 200;
@@ -17,7 +19,7 @@ const DELAY_BETWEEN_ORDERS = 200;
 async function login() {
   console.log("Logging in...");
 
-  const response = await fetch(`${API_URL}/auth/login`, {
+  const response = await fetch(`${API_URL}/api/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -57,7 +59,7 @@ async function createOrder(token, orderNumber) {
     total_amount: 100,
   };
 
-  const response = await fetch(`${API_URL}/orders`, {
+  const response = await fetch(`${API_URL}/api/orders`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -89,6 +91,7 @@ function sleep(ms) {
 
 async function runLoadTest() {
   console.log("\n🚀 Starting load test...");
+  console.log(`API: ${API_URL}`);
   console.log(`Target orders: ${TOTAL_ORDERS}`);
   console.log(`Delay between orders: ${DELAY_BETWEEN_ORDERS}ms\n`);
 
@@ -98,6 +101,12 @@ async function runLoadTest() {
   const startTime = Date.now();
 
   try {
+    if (!EMAIL || !PASSWORD) {
+      throw new Error(
+        "Missing TEST_EMAIL or TEST_PASSWORD in the load-test .env file",
+      );
+    }
+
     const token = await login();
 
     for (let i = 1; i <= TOTAL_ORDERS; i++) {
