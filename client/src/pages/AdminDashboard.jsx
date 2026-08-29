@@ -2,8 +2,9 @@ import { io } from "socket.io-client";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../App.css";
-
 import { useAuth } from "../context/AuthContext";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 function AdminDashboard() {
   const [orders, setOrders] = useState([]);
@@ -25,7 +26,7 @@ function AdminDashboard() {
       setLoading(true);
       setError("");
 
-      const response = await fetch("http://localhost:5000/api/orders", {
+      const response = await fetch(`${API_URL}/api/orders`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -51,14 +52,11 @@ function AdminDashboard() {
   // Fetch analytics from the REST API
   const fetchAnalytics = async () => {
     try {
-      const response = await fetch(
-        "http://localhost:5000/api/analytics/summary",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      const response = await fetch(`${API_URL}/api/analytics/summary`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
 
       const data = await response.json();
 
@@ -77,18 +75,12 @@ function AdminDashboard() {
   useEffect(() => {
     if (!token) return;
 
-    // ==============================
-    // 1. FETCH INITIAL DATA IMMEDIATELY
-    // ==============================
-    // The dashboard should not depend on Socket.io
-    // to load its initial data.
+    // Fetch initial data immediately
     fetchOrders();
     fetchAnalytics();
 
-    // ==============================
-    // 2. CONNECT TO SOCKET.IO
-    // ==============================
-    const socket = io("http://localhost:5000", {
+    // Connect to Socket.io
+    const socket = io(API_URL, {
       auth: {
         token,
       },
@@ -98,14 +90,11 @@ function AdminDashboard() {
       console.log("Admin socket connected:", socket.id);
     });
 
-    // ==============================
-    // 3. RECEIVE NEW ORDERS LIVE
-    // ==============================
+    // Receive new orders live
     socket.on("order:created", (newOrder) => {
       console.log("New order received:", newOrder);
 
       setOrders((currentOrders) => {
-        // Prevent duplicate orders
         const alreadyExists = currentOrders.some(
           (order) => String(order.id) === String(newOrder.id),
         );
@@ -118,18 +107,14 @@ function AdminDashboard() {
       });
     });
 
-    // ==============================
-    // 4. RECEIVE LIVE ANALYTICS
-    // ==============================
+    // Receive live analytics updates
     socket.on("analytics:update", (analyticsData) => {
       console.log("Live analytics update received:", analyticsData);
 
       setAnalytics(analyticsData);
     });
 
-    // ==============================
-    // 5. RECEIVE LIVE STATUS UPDATES
-    // ==============================
+    // Receive live order status updates
     socket.on("order:status_updated", (statusUpdate) => {
       console.log("Order status updated:", statusUpdate);
 
@@ -145,14 +130,11 @@ function AdminDashboard() {
       );
     });
 
-    // ==============================
-    // 6. SOCKET CONNECTION ERROR
-    // ==============================
     socket.on("connect_error", (error) => {
       console.error("Admin socket connection error:", error.message);
     });
 
-    // Cleanup when component unmounts
+    // Cleanup socket connection
     return () => {
       socket.disconnect();
     };
@@ -173,7 +155,6 @@ function AdminDashboard() {
         <div className="dashboard-actions">
           <div className="order-count">
             <span>{analytics?.totalOrders ?? orders.length}</span>
-
             <small>Total Orders</small>
           </div>
 
@@ -184,9 +165,7 @@ function AdminDashboard() {
       </header>
 
       <main>
-        {/* ==============================
-            LIVE ANALYTICS SECTION
-        ============================== */}
+        {/* Live Analytics Section */}
         {analytics && (
           <section className="analytics-section">
             <div className="section-header">
@@ -197,25 +176,21 @@ function AdminDashboard() {
             <div className="analytics-grid">
               <div className="analytics-card">
                 <span className="label">Total Orders</span>
-
                 <h3>{analytics.totalOrders}</h3>
               </div>
 
               <div className="analytics-card">
                 <span className="label">Orders per Minute</span>
-
                 <h3>{analytics.ordersPerMinute}</h3>
               </div>
 
               <div className="analytics-card">
                 <span className="label">Cancellation Rate</span>
-
                 <h3>{analytics.cancellationRate}%</h3>
               </div>
 
               <div className="analytics-card">
                 <span className="label">Current Bottleneck</span>
-
                 <h3>
                   {analytics.bottleneck?.stage?.replaceAll("_", " ") || "None"}
                 </h3>
@@ -263,7 +238,6 @@ function AdminDashboard() {
                     ([stage, seconds]) => (
                       <div className="analytics-row" key={stage}>
                         <span>{stage.replaceAll("_", " ")}</span>
-
                         <strong>{Math.round(seconds)} sec</strong>
                       </div>
                     ),
@@ -274,9 +248,7 @@ function AdminDashboard() {
           </section>
         )}
 
-        {/* ==============================
-            ORDERS SECTION
-        ============================== */}
+        {/* Orders Section */}
         <div className="section-header">
           <h2>All Orders</h2>
         </div>
@@ -288,7 +260,6 @@ function AdminDashboard() {
         ) : error ? (
           <div className="state-message error">
             <h3>Failed to load orders</h3>
-
             <p>{error}</p>
 
             <button onClick={fetchOrders}>Try Again</button>
@@ -296,7 +267,6 @@ function AdminDashboard() {
         ) : orders.length === 0 ? (
           <div className="state-message">
             <h3>No orders available</h3>
-
             <p>Orders will appear here automatically.</p>
           </div>
         ) : (
@@ -316,31 +286,26 @@ function AdminDashboard() {
                 <div className="order-details">
                   <div className="detail">
                     <span className="label">Customer</span>
-
                     <span>{order.customer_name}</span>
                   </div>
 
                   <div className="detail">
                     <span className="label">Address</span>
-
                     <span>{order.address}</span>
                   </div>
 
                   <div className="detail">
                     <span className="label">Total Amount</span>
-
                     <span>₹{order.total_amount}</span>
                   </div>
 
                   <div className="detail">
                     <span className="label">Assigned Agent</span>
-
                     <span>{order.assigned_agent || "Not assigned"}</span>
                   </div>
 
                   <div className="detail">
                     <span className="label">Created</span>
-
                     <span>{new Date(order.created_at).toLocaleString()}</span>
                   </div>
                 </div>

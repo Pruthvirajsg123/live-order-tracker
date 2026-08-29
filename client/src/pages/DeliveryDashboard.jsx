@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import "../App.css";
 import { useAuth } from "../context/AuthContext";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function DeliveryDashboard() {
   const { token, user, logout } = useAuth();
 
@@ -15,7 +17,7 @@ function DeliveryDashboard() {
       setLoading(true);
       setError("");
 
-      const response = await fetch("http://localhost:5000/api/orders", {
+      const response = await fetch(`${API_URL}/api/orders`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -38,19 +40,16 @@ function DeliveryDashboard() {
 
   const updateOrderStatus = async (orderId, nextStatus) => {
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/orders/${orderId}/status`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            status: nextStatus,
-          }),
+      const response = await fetch(`${API_URL}/api/orders/${orderId}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          status: nextStatus,
+        }),
+      });
 
       const data = await response.json();
 
@@ -80,7 +79,7 @@ function DeliveryDashboard() {
   useEffect(() => {
     if (!token) return;
 
-    const socket = io("http://localhost:5000", {
+    const socket = io(API_URL, {
       auth: {
         token,
       },
@@ -93,7 +92,7 @@ function DeliveryDashboard() {
       fetchOrders();
     });
 
-    // NEW: Receive an order when it is assigned specifically
+    // Receive an order when it is assigned specifically
     // to this delivery agent.
     socket.on("order:assigned", (assignedOrder) => {
       console.log("New order assigned:", assignedOrder);

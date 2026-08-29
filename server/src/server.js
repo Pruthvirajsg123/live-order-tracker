@@ -16,9 +16,12 @@ const analyticsRoutes = require("./routes/analyticsRoutes");
 
 const app = express();
 
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+
+// Express CORS configuration
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: CLIENT_URL,
   }),
 );
 
@@ -37,7 +40,8 @@ const PORT = process.env.PORT || 5000;
 // Create Socket.io server — ONLY ONCE
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: CLIENT_URL,
+    methods: ["GET", "POST", "PATCH"],
   },
 });
 
@@ -115,5 +119,5 @@ app.get("/api/health/db", async (req, res) => {
 
 // Start HTTP + Socket.io server
 server.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
