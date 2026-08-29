@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import API_URL from "../config/api";
 
 function LoginPage() {
   const [email, setEmail] = useState("");
@@ -18,7 +19,7 @@ function LoginPage() {
       setLoading(true);
       setError("");
 
-      const response = await fetch("http://localhost:5000/api/auth/login", {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -58,6 +59,7 @@ function LoginPage() {
     <div className="auth-page">
       <div className="auth-card">
         <h1>Live Order Tracker</h1>
+
         <p className="auth-subtitle">Sign in to access your dashboard</p>
 
         <form onSubmit={handleSubmit}>
